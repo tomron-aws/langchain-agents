@@ -1,0 +1,1210 @@
+Resources:
+  WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 10
+            Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: aws-cdk:auto-delete-objects
+          Value: "true"
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappBucket425a0596-a19f-4c6b-a0e0-6602f1bbb9b8/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: The S3 Bucket has server access logs disabled.
+            id: AwsSolutions-S1
+  WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b8Policy2A6CF9A7:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              - Fn::GetAtt:
+                  - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+                        - Arn
+                    - /*
+          - Action:
+              - s3:DeleteObject*
+              - s3:GetBucket*
+              - s3:List*
+              - s3:PutBucketPolicy
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::GetAtt:
+                  - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
+                  - Arn
+            Resource:
+              - Fn::GetAtt:
+                  - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+                        - Arn
+                    - /*
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappBucket425a0596-a19f-4c6b-a0e0-6602f1bbb9b8/Policy/Resource
+  WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b8AutoDeleteObjectsCustomResourceE0754E18:
+    Type: Custom::S3AutoDeleteObjects
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F
+          - Arn
+      BucketName:
+        Ref: WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+    DependsOn:
+      - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b8Policy2A6CF9A7
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappBucket425a0596-a19f-4c6b-a0e0-6602f1bbb9b8/AutoDeleteObjectsCustomResource/Default
+  WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b8Notifications8F263CD3:
+    Type: Custom::S3BucketNotifications
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691
+          - Arn
+      BucketName:
+        Ref: WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+      NotificationConfiguration:
+        LambdaFunctionConfigurations:
+          - Events:
+              - s3:ObjectCreated:Put
+            LambdaFunctionArn:
+              Fn::GetAtt:
+                - IngestionJob878E4082
+                - Arn
+      Managed: true
+      SkipDestinationValidation: false
+    DependsOn:
+      - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b8AllowBucketNotificationsToServerlessAIStackIngestionJobA8DEC2DE5348BDDB
+      - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b8Policy2A6CF9A7
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappBucket425a0596-a19f-4c6b-a0e0-6602f1bbb9b8/Notifications/Resource
+  WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b8AllowBucketNotificationsToServerlessAIStackIngestionJobA8DEC2DE5348BDDB:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - IngestionJob878E4082
+          - Arn
+      Principal: s3.amazonaws.com
+      SourceAccount: 
+        Ref: AWS::AccountId
+      SourceArn:
+        Fn::GetAtt:
+          - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+          - Arn
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappBucket425a0596-a19f-4c6b-a0e0-6602f1bbb9b8/AllowBucketNotificationsToServerlessAIStackIngestionJobA8DEC2DE
+  CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role
+  CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: aws-blogs-artifacts-public
+        S3Key: ML-16776/faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip
+      Timeout: 900
+      MemorySize: 128
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
+          - Arn
+      Runtime: nodejs20.x
+      Description:
+        Fn::Join:
+          - ""
+          - - "Lambda function for auto-deleting objects in "
+            - Ref: WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+            - " S3 bucket."
+    DependsOn:
+      - CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler
+      aws:asset:path: asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6
+      aws:asset:property: Code
+  WhatsappKnowledgeBaseRole55B2146F:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+          - Action: sts:AssumeRole
+            Condition:
+              ArnLike:
+                aws:SourceArn:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:bedrock:"
+                      - Ref: AWS::Region
+                      - ":"
+                      - Ref: AWS::AccountId
+                      - :knowledge-base/*
+            Effect: Allow
+            Principal:
+              Service: bedrock.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Ref: WhatsappKnowledgeBaseKBVectorsAOSSApiAccessAll3CBE78F1
+      RoleName: AmazonBedrockExecutionRoleForKnowledgeBaseServerldgeBase4D11C1DF
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/Role/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: The KB role needs read only access to all objects in the data source bucket.
+            id: AwsSolutions-IAM5
+  WhatsappKnowledgeBaseRoleDefaultPolicy3834F8A2:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: bedrock:InvokeModel
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:bedrock:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - :foundation-model/amazon.titan-embed-text-v1
+          - Action:
+              - s3:GetBucket*
+              - s3:GetObject*
+              - s3:List*
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+                        - Arn
+                    - /*
+        Version: "2012-10-17"
+      PolicyName: WhatsappKnowledgeBaseRoleDefaultPolicy3834F8A2
+      Roles:
+        - Ref: WhatsappKnowledgeBaseRole55B2146F
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/Role/DefaultPolicy/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: The KB role needs read only access to all objects in the data source bucket.
+            id: AwsSolutions-IAM5
+  WhatsappKnowledgeBaseKBVectorsEncryptionPolicy9326E8EA:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: encryptionpolicyservtorsd05ee8cf
+      Policy: '{"Rules":[{"ResourceType":"collection","Resource":["collection/vectorstoreserverectorsd05ee8cf"]}],"AWSOwnedKey":true}'
+      Type: encryption
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBVectors/EncryptionPolicy
+  WhatsappKnowledgeBaseKBVectorsNetworkPolicy10852A50:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: networkpolicyservectorsd05ee8cf
+      Policy: '[{"Rules":[{"ResourceType":"collection","Resource":["collection/vectorstoreserverectorsd05ee8cf"]},{"ResourceType":"dashboard","Resource":["collection/vectorstoreserverectorsd05ee8cf"]}],"AllowFromPublic":true}]'
+      Type: network
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBVectors/NetworkPolicy
+  WhatsappKnowledgeBaseKBVectorsVectorCollectionFFAFB7C1:
+    Type: AWS::OpenSearchServerless::Collection
+    Properties:
+      Name: vectorstoreserverectorsd05ee8cf
+      StandbyReplicas: ENABLED
+      Type: VECTORSEARCH
+    DependsOn:
+      - WhatsappKnowledgeBaseKBVectorsEncryptionPolicy9326E8EA
+      - WhatsappKnowledgeBaseKBVectorsNetworkPolicy10852A50
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBVectors/VectorCollection
+  WhatsappKnowledgeBaseKBVectorsAOSSApiAccessAll3CBE78F1:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: ""
+      Path: /
+      PolicyDocument:
+        Statement:
+          - Action: aoss:APIAccessAll
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - WhatsappKnowledgeBaseKBVectorsVectorCollectionFFAFB7C1
+                - Arn
+        Version: "2012-10-17"
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBVectors/AOSSApiAccessAll/Resource
+  WhatsappKnowledgeBaseKBVectorsDataAccessPolicyB4EEFBF7:
+    Type: AWS::OpenSearchServerless::AccessPolicy
+    Properties:
+      Name: dataaccesspolicyservtorsd05ee8cf
+      Policy:
+        Fn::Join:
+          - ""
+          - - '[{"Rules":[{"Resource":["collection/vectorstoreserverectorsd05ee8cf"],"Permission":["aoss:DescribeCollectionItems","aoss:CreateCollectionItems","aoss:UpdateCollectionItems"],"ResourceType":"collection"},{"Resource":["index/vectorstoreserverectorsd05ee8cf/*"],"Permission":["aoss:UpdateIndex","aoss:DescribeIndex","aoss:ReadDocument","aoss:WriteDocument","aoss:CreateIndex"],"ResourceType":"index"}],"Principal":["'
+            - Fn::GetAtt:
+                - WhatsappKnowledgeBaseRole55B2146F
+                - Arn
+            - '"],"Description":""}]'
+      Type: data
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBVectors/DataAccessPolicy
+    Condition: WhatsappKnowledgeBaseKBVectorsIsDataAccessPolicyNotEmpty5660FCFC
+  WhatsappKnowledgeBaseKBIndexManageIndexPolicy8FACAFD3:
+    Type: AWS::OpenSearchServerless::AccessPolicy
+    Properties:
+      Name: manageindexpolicyserdex570a3090
+      Policy:
+        Fn::Join:
+          - ""
+          - - '[{"Rules":[{"Resource":["index/vectorstoreserverectorsd05ee8cf/*"],"Permission":["aoss:DescribeIndex","aoss:CreateIndex","aoss:DeleteIndex","aoss:UpdateIndex"],"ResourceType":"index"},{"Resource":["collection/vectorstoreserverectorsd05ee8cf"],"Permission":["aoss:DescribeCollectionItems"],"ResourceType":"collection"}],"Principal":["'
+            - Fn::GetAtt:
+                - OpenSearchIndexCRProviderCRRole466FC04E
+                - Arn
+            - '"],"Description":""}]'
+      Type: data
+    DependsOn:
+      - WhatsappKnowledgeBaseKBVectorsAOSSApiAccessAll3CBE78F1
+      - WhatsappKnowledgeBaseKBVectorsDataAccessPolicyB4EEFBF7
+      - WhatsappKnowledgeBaseKBVectorsEncryptionPolicy9326E8EA
+      - WhatsappKnowledgeBaseKBVectorsNetworkPolicy10852A50
+      - WhatsappKnowledgeBaseKBVectorsVectorCollectionFFAFB7C1
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBIndex/ManageIndexPolicy
+  WhatsappKnowledgeBaseKBIndexVectorIndex11FF3A9B:
+    Type: Custom::OpenSearchIndex
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - OpenSearchIndexCRProviderframeworkonEvent6CAE4696
+          - Arn
+      Endpoint:
+        Fn::Join:
+          - ""
+          - - Fn::GetAtt:
+                - WhatsappKnowledgeBaseKBVectorsVectorCollectionFFAFB7C1
+                - Id
+            - "."
+            - Ref: AWS::Region
+            - "."
+            - aoss.amazonaws.com
+      IndexName: bedrock-knowledge-base-default-index
+      VectorField: bedrock-knowledge-base-default-vector
+      Dimensions: 1536
+      MetadataManagement:
+        - MappingField: AMAZON_BEDROCK_TEXT_CHUNK
+          DataType: text
+          Filterable: true
+        - MappingField: AMAZON_BEDROCK_METADATA
+          DataType: text
+          Filterable: false
+    DependsOn:
+      - WhatsappKnowledgeBaseKBIndexManageIndexPolicy8FACAFD3
+      - WhatsappKnowledgeBaseKBVectorsAOSSApiAccessAll3CBE78F1
+      - WhatsappKnowledgeBaseKBVectorsDataAccessPolicyB4EEFBF7
+      - WhatsappKnowledgeBaseKBVectorsEncryptionPolicy9326E8EA
+      - WhatsappKnowledgeBaseKBVectorsNetworkPolicy10852A50
+      - WhatsappKnowledgeBaseKBVectorsVectorCollectionFFAFB7C1
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBIndex/VectorIndex/Default
+  WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9:
+    Type: AWS::Bedrock::KnowledgeBase
+    Properties:
+      KnowledgeBaseConfiguration:
+        Type: VECTOR
+        VectorKnowledgeBaseConfiguration:
+          EmbeddingModelArn:
+            Fn::Join:
+              - ""
+              - - "arn:aws:bedrock:"
+                - Ref: AWS::Region
+                - ":"
+                - :foundation-model/amazon.titan-embed-text-v1
+      Name: KBServerlessAowledgeBase4D11C1DF
+      RoleArn:
+        Fn::GetAtt:
+          - WhatsappKnowledgeBaseRole55B2146F
+          - Arn
+      StorageConfiguration:
+        OpensearchServerlessConfiguration:
+          CollectionArn:
+            Fn::GetAtt:
+              - WhatsappKnowledgeBaseKBVectorsVectorCollectionFFAFB7C1
+              - Arn
+          FieldMapping:
+            MetadataField: AMAZON_BEDROCK_METADATA
+            TextField: AMAZON_BEDROCK_TEXT_CHUNK
+            VectorField: bedrock-knowledge-base-default-vector
+          VectorIndexName: bedrock-knowledge-base-default-index
+        Type: OPENSEARCH_SERVERLESS
+    DependsOn:
+      - WhatsappKnowledgeBaseKBCRPolicy3403943F
+      - WhatsappKnowledgeBaseKBIndexManageIndexPolicy8FACAFD3
+      - WhatsappKnowledgeBaseKBIndexVectorIndex11FF3A9B
+      - WhatsappKnowledgeBaseRoleDefaultPolicy3834F8A2
+      - WhatsappKnowledgeBaseRole55B2146F
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/MyCfnKnowledgeBase
+  WhatsappKnowledgeBaseKBCRPolicy3403943F:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: bedrock:CreateKnowledgeBase
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - bedrock:DeleteKnowledgeBase
+              - bedrock:TagResource
+              - bedrock:UpdateKnowledgeBase
+            Effect: Allow
+            Resource:
+               Fn::Join:
+                - ""
+                - - "arn:aws:bedrock:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :knowledge-base/*
+          - Action: iam:PassRole
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - WhatsappKnowledgeBaseRole55B2146F
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: WhatsappKnowledgeBaseKBCRPolicy3403943F
+      Roles:
+        - Ref: WhatsappKnowledgeBaseRole55B2146F
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappKnowledgeBase/KBCRPolicy/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: Bedrock CreateKnowledgeBase can't be restricted by resource.
+            id: AwsSolutions-IAM5
+  OpenSearchIndexCRProviderCRRole466FC04E:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - Ref: WhatsappKnowledgeBaseKBVectorsAOSSApiAccessAll3CBE78F1
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/OpenSearchIndexCRProvider/CRRole/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: CDK CustomResource Lambda uses the AWSLambdaBasicExecutionRole AWS Managed Policy.
+            id: AwsSolutions-IAM4
+  OpenSearchIndexCRProviderCustomResourcesFunction4F9ADEA2:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: aws-blogs-artifacts-public
+        S3Key: ML-16776/09d29c8955d507cea3bb83bd6d8f5a2aba803d1a07a3c9f76d00d7f3ad5a291d.zip
+      Description: Custom Resource Provider
+      Handler: custom_resources.on_event
+      MemorySize: 128
+      Role:
+        Fn::GetAtt:
+          - OpenSearchIndexCRProviderCRRole466FC04E
+          - Arn
+      Runtime: python3.12
+      Timeout: 900
+    DependsOn:
+      - OpenSearchIndexCRProviderCRRole466FC04E
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/OpenSearchIndexCRProvider/CustomResourcesFunction/Resource
+      aws:asset:path: asset.09d29c8955d507cea3bb83bd6d8f5a2aba803d1a07a3c9f76d00d7f3ad5a291d
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  OpenSearchIndexCRProviderCustomResourcesFunctionLogRetentionC32546EF:
+    Type: Custom::LogRetention
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A
+          - Arn
+      LogGroupName:
+        Fn::Join:
+          - ""
+          - - /aws/lambda/
+            - Ref: OpenSearchIndexCRProviderCustomResourcesFunction4F9ADEA2
+      RetentionInDays: 7
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/OpenSearchIndexCRProvider/CustomResourcesFunction/LogRetention/Resource
+  OpenSearchIndexCRProviderProviderRole87B4E831:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/OpenSearchIndexCRProvider/ProviderRole/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: CDK CustomResource Lambda uses the AWSLambdaBasicExecutionRole AWS Managed Policy.
+            id: AwsSolutions-IAM4
+          - reason: CDK CustomResource Provider has a wildcard to invoke any version of the specific Custom Resource function.
+            id: AwsSolutions-IAM5
+            applies_to:
+              - regex: /^Resource::<OpenSearchIndexCRProviderCustomResourcesFunction[A-Z0-9]+\.Arn>:\*$/g
+  OpenSearchIndexCRProviderProviderRoleDefaultPolicy9810CB1F:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: lambda:InvokeFunction
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - OpenSearchIndexCRProviderCustomResourcesFunction4F9ADEA2
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - OpenSearchIndexCRProviderCustomResourcesFunction4F9ADEA2
+                        - Arn
+                    - :*
+        Version: "2012-10-17"
+      PolicyName: OpenSearchIndexCRProviderProviderRoleDefaultPolicy9810CB1F
+      Roles:
+        - Ref: OpenSearchIndexCRProviderProviderRole87B4E831
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/OpenSearchIndexCRProvider/ProviderRole/DefaultPolicy/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: CDK CustomResource Provider has a wildcard to invoke any version of the specific Custom Resource function.
+            id: AwsSolutions-IAM5
+            applies_to:
+              - regex: /^Resource::<OpenSearchIndexCRProviderCustomResourcesFunction[A-Z0-9]+\.Arn>:\*$/g
+  OpenSearchIndexCRProviderframeworkonEvent6CAE4696:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: aws-blogs-artifacts-public
+        S3Key: ML-16776/4dc48ffba382f93077a1e6824599bbd4ceb6f91eb3d9442eca3b85bdb1a20b1e.zip
+      Description: AWS CDK resource provider framework - onEvent (ServerlessAIStack/OpenSearchIndexCRProvider/Provider)
+      Environment:
+        Variables:
+          USER_ON_EVENT_FUNCTION_ARN:
+            Fn::GetAtt:
+              - OpenSearchIndexCRProviderCustomResourcesFunction4F9ADEA2
+              - Arn
+      Handler: framework.onEvent
+      Role:
+        Fn::GetAtt:
+          - OpenSearchIndexCRProviderProviderRole87B4E831
+          - Arn
+      Runtime: nodejs20.x
+      Timeout: 900
+    DependsOn:
+      - OpenSearchIndexCRProviderProviderRoleDefaultPolicy9810CB1F
+      - OpenSearchIndexCRProviderProviderRole87B4E831
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/OpenSearchIndexCRProvider/Provider/framework-onEvent/Resource
+      aws:asset:path: asset.4dc48ffba382f93077a1e6824599bbd4ceb6f91eb3d9442eca3b85bdb1a20b1e
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+      cdk_nag:
+        rules_to_suppress:
+          - reason: Lambda runtime version is managed upstream by CDK.
+            id: AwsSolutions-L1
+  OpenSearchIndexCRProviderframeworkonEventLogRetention64E7FA2B:
+    Type: Custom::LogRetention
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A
+          - Arn
+      LogGroupName:
+        Fn::Join:
+          - ""
+          - - /aws/lambda/
+            - Ref: OpenSearchIndexCRProviderframeworkonEvent6CAE4696
+      RetentionInDays: 7
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/OpenSearchIndexCRProvider/Provider/framework-onEvent/LogRetention/Resource
+  LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: CDK CustomResource LogRetention Lambda uses the AWSLambdaBasicExecutionRole AWS Managed Policy. Managed by CDK.
+            id: AwsSolutions-IAM4
+          - reason: CDK CustomResource LogRetention Lambda uses a wildcard to manage log streams created at runtime. Managed by CDK.
+            id: AwsSolutions-IAM5
+  LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:DeleteRetentionPolicy
+              - logs:PutRetentionPolicy
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB
+      Roles:
+        - Ref: LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: CDK CustomResource LogRetention Lambda uses the AWSLambdaBasicExecutionRole AWS Managed Policy. Managed by CDK.
+            id: AwsSolutions-IAM4
+          - reason: CDK CustomResource LogRetention Lambda uses a wildcard to manage log streams created at runtime. Managed by CDK.
+            id: AwsSolutions-IAM5
+  LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Timeout: 900
+      Code:
+        S3Bucket: aws-blogs-artifacts-public
+        S3Key: ML-16776/4e26bf2d0a26f2097fb2b261f22bb51e3f6b4b52635777b1e54edbd8e2d58c35.zip
+      Role:
+        Fn::GetAtt:
+          - LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB
+          - Arn
+    DependsOn:
+      - LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB
+      - LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource
+      aws:asset:path: asset.4e26bf2d0a26f2097fb2b261f22bb51e3f6b4b52635777b1e54edbd8e2d58c35
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  WhatsappDataSourceC11AB03A:
+    Type: AWS::Bedrock::DataSource
+    Properties:
+      DataSourceConfiguration:
+        S3Configuration:
+          BucketArn:
+            Fn::GetAtt:
+              - WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+              - Arn
+        Type: S3
+      KnowledgeBaseId:
+        Fn::GetAtt:
+          - WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9
+          - KnowledgeBaseId
+      Name: Whatsapp
+      VectorIngestionConfiguration:
+        ChunkingConfiguration:
+          ChunkingStrategy: FIXED_SIZE
+          FixedSizeChunkingConfiguration:
+            MaxTokens: 1024
+            OverlapPercentage: 20
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/WhatsappDataSource/DataSource
+  lambdaIngestionRole4FC7FBF9:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:logs:"
+                      - Ref: AWS::Region
+                      - ":"
+                      - Ref: AWS::AccountId
+                      - :log-group:/aws/lambda/start-ingestion-trigger:*
+              - Action: bedrock:StartIngestionJob
+                Effect: Allow
+                Resource:
+                  Fn::GetAtt:
+                    - WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9
+                    - KnowledgeBaseArn
+            Version: "2012-10-17"
+          PolicyName: LambdaBasicExecution
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/lambdaIngestionRole/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: Wildcard permission is needed to create custom Lambda execution role to write to CloudWatch Logs.
+            id: AwsSolutions-IAM5
+  IngestionJob878E4082:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: aws-blogs-artifacts-public
+        S3Key: ML-16776/36cb4bb3e2a1530f17dbfde098db2da1fea6795ec206822f0bd77e62ce2456c6.zip
+      Environment:
+        Variables:
+          KNOWLEDGE_BASE_ID:
+            Fn::GetAtt:
+              - WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9
+              - KnowledgeBaseId
+          DATA_SOURCE_ID:
+            Fn::GetAtt:
+              - WhatsappDataSourceC11AB03A
+              - DataSourceId
+      FunctionName: start-ingestion-trigger
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - lambdaIngestionRole4FC7FBF9
+          - Arn
+      Runtime: nodejs20.x
+      Timeout: 900
+    DependsOn:
+      - lambdaIngestionRole4FC7FBF9
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/IngestionJob/Resource
+      aws:asset:path: asset.36cb4bb3e2a1530f17dbfde098db2da1fea6795ec206822f0bd77e62ce2456c6
+      aws:asset:is-bundled: true
+      aws:asset:property: Code
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: CDK CustomResource BucketNotifications Lambda uses the AWSLambdaBasicExecutionRole AWS Managed Policy. Managed by CDK.
+            id: AwsSolutions-IAM4
+          - reason: CDK CustomResource BucketNotifications Lambda uses a wildcard to manage log streams created at runtime. Managed by CDK.
+            id: AwsSolutions-IAM5
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: s3:PutBucketNotification
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36
+      Roles:
+        - Ref: BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: CDK CustomResource BucketNotifications Lambda uses the AWSLambdaBasicExecutionRole AWS Managed Policy. Managed by CDK.
+            id: AwsSolutions-IAM4
+          - reason: CDK CustomResource BucketNotifications Lambda uses a wildcard to manage log streams created at runtime. Managed by CDK.
+            id: AwsSolutions-IAM5
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: AWS CloudFormation handler for "Custom::S3BucketNotifications" resources (@aws-cdk/aws-s3)
+      Code:
+        ZipFile: |-
+          import boto3  # type: ignore
+          import json
+          import logging
+          import urllib.request
+
+          s3 = boto3.client("s3")
+
+          EVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'
+          CONFIGURATION_TYPES = ["TopicConfigurations", "QueueConfigurations", "LambdaFunctionConfigurations"]
+
+          def handler(event: dict, context):
+            response_status = "SUCCESS"
+            error_message = ""
+            try:
+              props = event["ResourceProperties"]
+              notification_configuration = props["NotificationConfiguration"]
+              managed = props.get('Managed', 'true').lower() == 'true'
+              skipDestinationValidation = props.get('SkipDestinationValidation', 'false').lower() == 'true'
+              stack_id = event['StackId']
+              old = event.get("OldResourceProperties", {}).get("NotificationConfiguration", {})
+              if managed:
+                config = handle_managed(event["RequestType"], notification_configuration)
+              else:
+                config = handle_unmanaged(props["BucketName"], stack_id, event["RequestType"], notification_configuration, old)
+              s3.put_bucket_notification_configuration(Bucket=props["BucketName"], NotificationConfiguration=config, SkipDestinationValidation=skipDestinationValidation)
+            except Exception as e:
+              logging.exception("Failed to put bucket notification configuration")
+              response_status = "FAILED"
+              error_message = f"Error: {str(e)}. "
+            finally:
+              submit_response(event, context, response_status, error_message)
+
+          def handle_managed(request_type, notification_configuration):
+            if request_type == 'Delete':
+              return {}
+            return notification_configuration
+
+          def handle_unmanaged(bucket, stack_id, request_type, notification_configuration, old):
+            def get_id(n):
+              n['Id'] = ''
+              strToHash=json.dumps(n, sort_keys=True).replace('"Name": "prefix"', '"Name": "Prefix"').replace('"Name": "suffix"', '"Name": "Suffix"')
+              return f"{stack_id}-{hash(strToHash)}"
+            def with_id(n):
+              n['Id'] = get_id(n)
+              return n
+
+            external_notifications = {}
+            existing_notifications = s3.get_bucket_notification_configuration(Bucket=bucket)
+            for t in CONFIGURATION_TYPES:
+              if request_type == 'Update':
+                  old_incoming_ids = [get_id(n) for n in old.get(t, [])]
+                  external_notifications[t] = [n for n in existing_notifications.get(t, []) if not get_id(n) in old_incoming_ids]      
+              elif request_type == 'Delete':
+                  external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f"{stack_id}-")]
+              elif request_type == 'Create':
+                  external_notifications[t] = [n for n in existing_notifications.get(t, [])]
+            if EVENTBRIDGE_CONFIGURATION in existing_notifications:
+              external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]
+
+            if request_type == 'Delete':
+              return external_notifications
+
+            notifications = {}
+            for t in CONFIGURATION_TYPES:
+              external = external_notifications.get(t, [])
+              incoming = [with_id(n) for n in notification_configuration.get(t, [])]
+              notifications[t] = external + incoming
+
+            if EVENTBRIDGE_CONFIGURATION in notification_configuration:
+              notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]
+            elif EVENTBRIDGE_CONFIGURATION in external_notifications:
+              notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]
+
+            return notifications
+
+          def submit_response(event: dict, context, response_status: str, error_message: str):
+            response_body = json.dumps(
+              {
+                "Status": response_status,
+                "Reason": f"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}",
+                "PhysicalResourceId": event.get("PhysicalResourceId") or event["LogicalResourceId"],
+                "StackId": event["StackId"],
+                "RequestId": event["RequestId"],
+                "LogicalResourceId": event["LogicalResourceId"],
+                "NoEcho": False,
+              }
+            ).encode("utf-8")
+            headers = {"content-type": "", "content-length": str(len(response_body))}
+            try:
+              req = urllib.request.Request(url=event["ResponseURL"], headers=headers, data=response_body, method="PUT")
+              with urllib.request.urlopen(req) as response:
+                print(response.read().decode("utf-8"))
+              print("Status code: " + response.reason)
+            except Exception as e:
+                print("send(..) failed executing request.urlopen(..): " + str(e))
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+          - Arn
+      Runtime: python3.11
+      Timeout: 300
+    DependsOn:
+      - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36
+      - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource
+  ConversationTable75C14D21:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: SessionId
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: SessionId
+          KeyType: HASH
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/ConversationTable/Resource
+  lambdaRoleC844FDB1:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:logs:"
+                      - Ref: AWS::Region
+                      - ":"
+                      - Ref: AWS::AccountId
+                      - :log-group:/aws/lambda/LexBedrockMessageProcessor:*
+              - Action: bedrock:InvokeModel
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:bedrock:"
+                      - Ref: AWS::Region
+                      - ":"
+                      - :foundation-model/anthropic.claude-3-haiku-20240307-v1:0
+              - Action: bedrock:Retrieve
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:bedrock:"
+                      - Ref: AWS::Region
+                      - ":"
+                      - Ref: AWS::AccountId
+                      - :knowledge-base/
+                      - Fn::GetAtt:
+                          - WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9
+                          - KnowledgeBaseId
+            Version: "2012-10-17"
+          PolicyName: LambdaBasicExecution
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/lambdaRole/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: Wildcard permission is needed to create custom Lambda execution role to write to CloudWatch Logs
+            id: AwsSolutions-IAM5
+  lambdaRoleDefaultPolicyA63A8A92:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:ConditionCheckItem
+              - dynamodb:DeleteItem
+              - dynamodb:DescribeTable
+              - dynamodb:GetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:UpdateItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - ConversationTable75C14D21
+                  - Arn
+              - Ref: AWS::NoValue
+          - Action:
+              - ssm:DescribeParameters
+              - ssm:GetParameter
+              - ssm:GetParameterHistory
+              - ssm:GetParameters
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:ssm:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :parameter/
+                  - Ref: LANGCHAINAPIKEY80F88D14
+        Version: "2012-10-17"
+      PolicyName: lambdaRoleDefaultPolicyA63A8A92
+      Roles:
+        - Ref: lambdaRoleC844FDB1
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/lambdaRole/DefaultPolicy/Resource
+  LexBedrockMessageProcessorDF2FE64F:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures:
+        - arm64
+      Code:
+        S3Bucket: aws-blogs-artifacts-public
+        S3Key: ML-16776/d17b047f106c2e02e49fb198cc22fd124277aa66d49a8454990af2a147ad2393.zip
+      Environment:
+        Variables:
+          KNOWLEDGE_BASE_ID:
+            Fn::GetAtt:
+              - WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9
+              - KnowledgeBaseId
+          CONVERSATION_TABLE_NAME:
+            Ref: ConversationTable75C14D21
+          LANGCHAIN_TRACING_V2: "true"
+          LANGSMITH_ENDPOINT: https://api.smith.langchain.com
+          LANGCHAIN_API_KEY_PARAMETER_NAME:
+            Ref: LANGCHAINAPIKEY80F88D14
+          LANGCHAIN_PROJECT:
+            Fn::Join:
+              - ""
+              - - Claude-Agent-With-KB-
+                - Fn::GetAtt:
+                    - WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9
+                    - KnowledgeBaseId
+      FunctionName: LexBedrockMessageProcessor
+      Handler: LexBedrockMessageProcessor.lambda_handler
+      Layers:
+        - arn:aws:lambda:us-east-1:049513818483:layer:langchain-layer:25
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+          - lambdaRoleC844FDB1
+          - Arn
+      Runtime: python3.12
+      Timeout: 120
+    DependsOn:
+      - lambdaRoleDefaultPolicyA63A8A92
+      - lambdaRoleC844FDB1
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/LexBedrockMessageProcessor/Resource
+      aws:asset:path: asset.d17b047f106c2e02e49fb198cc22fd124277aa66d49a8454990af2a147ad2393
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  LexBedrockMessageProcessorInvokeSebg4cOyIU3RZ822t7Fg39pQgQkdxMsqUbbNpnTP7c2B5532E3:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - LexBedrockMessageProcessorDF2FE64F
+          - Arn
+      Principal: lex.amazonaws.com
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/LexBedrockMessageProcessor/InvokeSebg4cOyIU3RZ822t7Fg39pQgQkdxMsqUbbNpnTP+7c=
+  LANGCHAINAPIKEY80F88D14:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Langsmith API Key
+      Type: String
+      Value:
+        Ref: LangchainAPIKey
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/LANGCHAIN_API_KEY/Resource
+  LexRoleD3586196:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lex.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: polly:SynthesizeSpeech
+                Effect: Allow
+                Resource: "*"
+              - Action: lex:PutIntent
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:lex:"
+                      - Ref: AWS::Region
+                      - ":"
+                      - Ref: AWS::AccountId
+                      - :intent:LangchainBedrockExample:*
+            Version: "2012-10-17"
+          PolicyName: LexBasicExecution
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/LexRole/Resource
+      cdk_nag:
+        rules_to_suppress:
+          - reason: Wildcard permission is needed to create custom Lex execution role to use Polly Voices
+            id: AwsSolutions-IAM5
+  Bot:
+    Type: AWS::Lex::Bot
+    Properties:
+      AutoBuildBotLocales: true
+      BotLocales:
+        - Description: Langchain Bedrock Example Bot
+          Intents:
+            - IntentClosingSetting:
+                ClosingResponse:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: Hello. How can I help you?
+                NextStep:
+                  DialogAction:
+                    Type: ElicitIntent
+              Name: Hello
+              SampleUtterances:
+                - Utterance: Hello
+            - Description: Invokes LexMessageProcessor Lambda function
+              FulfillmentCodeHook:
+                Enabled: true
+              Name: FallbackIntent
+              ParentIntentSignature: AMAZON.FallbackIntent
+          LocaleId: en_US
+          NluConfidenceThreshold: 0.9
+          VoiceSettings:
+            VoiceId: Danielle
+      DataPrivacy:
+        ChildDirected: false
+      IdleSessionTTLInSeconds: 300
+      Name: LangchainBedrockExample
+      RoleArn:
+        Fn::GetAtt:
+          - LexRoleD3586196
+          - Arn
+      TestBotAliasSettings:
+        BotAliasLocaleSettings:
+          - BotAliasLocaleSetting:
+              CodeHookSpecification:
+                LambdaCodeHook:
+                  CodeHookInterfaceVersion: "1.0"
+                  LambdaArn:
+                    Fn::GetAtt:
+                      - LexBedrockMessageProcessorDF2FE64F
+                      - Arn
+              Enabled: true
+            LocaleId: en_US
+        Description: Langchain Bedrock Test Bot Alias
+        SentimentAnalysisSettings:
+          DetectSentiment: false
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/Bot
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/21Sy47bMAz8ltwVrpMA22t3XRQo+grioleDlhhXsSwtRNnZwPC/F5KdOCl64vCp4VBb2DxnkK3wzGupmrXRFQxFQNkIPHM58A6G1042FER+tDOazN4ZLS9LePYn5xWZRmGwrRTCkB/tnnyrmbWz4nNnZYggP9orHoXGFoaDMxTDyS4PzOg7WqxJLfGHwCjcG1km9PIPk+/JG2JOjxckO6/DZenMnTF0Y/EiJTFfx1SkvJNN6vxq3dmQqikuFEs/YcDCdV7SKHhXIjMFhpdohHE1wzdXHyiQTbMnAUrrFJ0YfiRzW19dLLZOVTD8wmraO4FRMLfxCl7beo8eWwrkkw5XZxSG3iFK78Io8o6Daw/EiVfS74YfUnvveq3Ip2US5yJgrW0t7ptzZ5VODGXqLv2cZLgOiGU/u/DWhX9oZbCB7Yfd6qNUjcGKn2qy5DHontao0xeTznLwnQwMw03qR52L3b3M/z3rb5LB+bszLlVln3LaKnqf675EPIp4BzjxU7/NYPMM2erEWq99Z4NuCQ6T/QvLSOHtEwMAAA==
+    Metadata:
+      aws:cdk:path: ServerlessAIStack/CDKMetadata/Default
+Conditions:
+  WhatsappKnowledgeBaseKBVectorsIsDataAccessPolicyNotEmpty5660FCFC:
+    Fn::Not:
+      - Fn::Equals:
+          - 0
+          - 1
+Outputs:
+  WhatsappBucketName:
+    Value:
+      Ref: WhatsappBucket425a0596a19f4c6ba0e06602f1bbb9b86ED5B3D1
+  WhatsappknowledgeBaseId:
+    Value:
+      Fn::GetAtt:
+        - WhatsappKnowledgeBaseMyCfnKnowledgeBase6D9710B9
+        - KnowledgeBaseId
+Parameters:
+  LangchainAPIKey:
+    Type: String
+    Description: Langsmith API Key.
